@@ -6,60 +6,60 @@
 #include "sci_spi.h"
 
 
-volatile struct  SW_info  Key_sw[KEY_SW_NUM];	// ƒXƒCƒbƒ`@6ŒÂ•ª‚Ìî•ñŠi”[—Ìˆæ
+volatile struct  SW_info  Key_sw[KEY_SW_NUM];	// ã‚¹ã‚¤ãƒƒãƒã€€6å€‹åˆ†ã®æƒ…å ±æ ¼ç´é ˜åŸŸ
 
 
-// X²AY²k‚Ì‘ª’è’l‚Ì•½‹Ïˆ——p
-// ‘ª’è’l‚Í12bitƒf[ƒ^‚¾‚ªAãˆÊ 8bit‚¾‚¯Œ©‚Ä‚¢‚é
+// Xè»¸ã€Yè»¸kã®æ¸¬å®šå€¤ã®å¹³å‡å‡¦ç†ç”¨
+// æ¸¬å®šå€¤ã¯12bitãƒ‡ãƒ¼ã‚¿ã ãŒã€ä¸Šä½ 8bitã ã‘è¦‹ã¦ã„ã‚‹
 
-uint8_t   touch_x_val;		// X²ƒf[ƒ^
-uint8_t   touch_y_val;          // Y²ƒf[ƒ^
+uint8_t   touch_x_val;		// Xè»¸ãƒ‡ãƒ¼ã‚¿
+uint8_t   touch_y_val;          // Yè»¸ãƒ‡ãƒ¼ã‚¿
 
-uint8_t   touch_z1_val;		// Z•ûŒü@(ƒ^ƒbƒ`ˆ³‘ª’è—p)
+uint8_t   touch_z1_val;		// Zæ–¹å‘ã€€(ã‚¿ãƒƒãƒåœ§æ¸¬å®šç”¨)
 uint8_t   touch_z2_val;
 
-uint8_t   tc_val_pt;		// ‘ª’è’l‚ÌŠi”[ˆÊ’u
+uint8_t   tc_val_pt;		// æ¸¬å®šå€¤ã®æ ¼ç´ä½ç½®
 
-uint8_t   touch_x[8];		// 8‰ñ•ª‚Ì‘ª’è’l
+uint8_t   touch_x[8];		// 8å›åˆ†ã®æ¸¬å®šå€¤
 uint8_t   touch_y[8];
 
 
-uint16_t   touch_x_average;	// •½‹Ï’l
+uint16_t   touch_x_average;	// å¹³å‡å€¤
 uint16_t   touch_y_average;
 
 
-float	touch_resistance;	// ƒ^ƒbƒ`’ïR
+float	touch_resistance;	// ã‚¿ãƒƒãƒæŠµæŠ—
 
 float   touch_z1_z2;		// z2/z1
 
 
-//  AF@”»•Ê—p
-uint8_t  flg_disp_fahrenheit;   // 1:(F ‰Ø•\¦)
+//  â„ƒã€Fã€€åˆ¤åˆ¥ç”¨
+uint8_t  flg_disp_fahrenheit;   // 1:(F è¯æ°è¡¨ç¤º)
 
 // 
-// ƒ^ƒbƒ`ó‘Ô‚Ì‰Šú‰» (  “dŒ¹ON’¼Œã‚É1‰ñÀ{ )
+// ã‚¿ãƒƒãƒçŠ¶æ…‹ã®åˆæœŸåŒ– (  é›»æºONç›´å¾Œã«1å›å®Ÿæ–½ )
 //  
-//   ‘S‚Ä”ñƒ^ƒbƒ`(SW OFF: High = 1 )‚Æ‚·‚é
-//   ‘ª’è’l‚ÌŠi”[ˆÊ’u‚Ì‰Šú‰»
+//   å…¨ã¦éã‚¿ãƒƒãƒ(SW OFF: High = 1 )ã¨ã™ã‚‹
+//   æ¸¬å®šå€¤ã®æ ¼ç´ä½ç½®ã®åˆæœŸåŒ–
 //
 void touch_pre_status_ini(void)
 {
 	uint32_t i;
 		
-	for ( i = 0 ; i < KEY_SW_NUM; i++ ) {		//  ‘S‚Ä”ñƒ^ƒbƒ`(SW OFF: High = 1 )‚Æ‚·‚é
+	for ( i = 0 ; i < KEY_SW_NUM; i++ ) {		//  å…¨ã¦éã‚¿ãƒƒãƒ(SW OFF: High = 1 )ã¨ã™ã‚‹
 	
 	     Key_sw[i].pre_status = 1;
 	
 	}
 	
- 	tc_val_pt = 0;		// Ši”[ˆÊ’u‚ÌƒNƒŠƒA	
+ 	tc_val_pt = 0;		// æ ¼ç´ä½ç½®ã®ã‚¯ãƒªã‚¢	
 }
 
 
-// X²AY²k‚Ì‘ª’èŒ‹‰Ê‚Ì•½‹Ï’l‚ğ“¾‚é (ƒvƒƒOƒ‰ƒ€ì¬—p)
-//@‰Ÿ‚³‚ê‚½ƒL[‚ğ”»’è‚·‚éƒvƒƒOƒ‰ƒ€ì¬‚ÉA•K—v‚Èƒf[ƒ^‚ğ“¾‚éB
-//(ÀÛ‚ÌƒL[“ü—Í”»’èˆ—‚É‚Í•½‹Ï’l‚Íg—p‚µ‚Ä‚¢‚È‚¢)
-// 12bitƒf[ƒ^‚ÌãˆÊ 8bit‚ğg—p tc_val_pt
+// Xè»¸ã€Yè»¸kã®æ¸¬å®šçµæœã®å¹³å‡å€¤ã‚’å¾—ã‚‹ (ãƒ—ãƒ­ã‚°ãƒ©ãƒ ä½œæˆç”¨)
+//ã€€æŠ¼ã•ã‚ŒãŸã‚­ãƒ¼ã‚’åˆ¤å®šã™ã‚‹ãƒ—ãƒ­ã‚°ãƒ©ãƒ ä½œæˆæ™‚ã«ã€å¿…è¦ãªãƒ‡ãƒ¼ã‚¿ã‚’å¾—ã‚‹ã€‚
+//(å®Ÿéš›ã®ã‚­ãƒ¼å…¥åŠ›åˆ¤å®šå‡¦ç†ã«ã¯å¹³å‡å€¤ã¯ä½¿ç”¨ã—ã¦ã„ãªã„)
+// 12bitãƒ‡ãƒ¼ã‚¿ã®ä¸Šä½ 8bitã‚’ä½¿ç”¨ tc_val_pt
 void xpt2046_cal_average(void)
 {
 	uint32_t  i;
@@ -67,28 +67,28 @@ void xpt2046_cal_average(void)
 	uint32_t  y_avg;
 	
 
-	touch_x[tc_val_pt] =  xpt_rcv_data[1];   // X²‘ª’èƒf[ƒ^‚Ì (b11-b4)
-	touch_y[tc_val_pt] =  xpt_rcv_data[4];   // Y²‘ª’èƒf[ƒ^‚Ì (b11-b4)
+	touch_x[tc_val_pt] =  xpt_rcv_data[1];   // Xè»¸æ¸¬å®šãƒ‡ãƒ¼ã‚¿ã® (b11-b4)
+	touch_y[tc_val_pt] =  xpt_rcv_data[4];   // Yè»¸æ¸¬å®šãƒ‡ãƒ¼ã‚¿ã® (b11-b4)
 	
-	x_avg = 0;			// •½‹Ï’l‚ÌŒvZ
+	x_avg = 0;			// å¹³å‡å€¤ã®è¨ˆç®—
 	y_avg = 0;
 	
-	for ( i = 0 ; i < 8 ; i++ ) {	// 8‰ñ•ª‚Ì‘˜a‚ğ“¾‚é 
+	for ( i = 0 ; i < 8 ; i++ ) {	// 8å›åˆ†ã®ç·å’Œã‚’å¾—ã‚‹ 
 	      x_avg = x_avg + touch_x[i];
 	      y_avg = y_avg + touch_y[i];
 	 }
 	   
-	touch_x_average =  x_avg >> 3;   // Š„‚é 8
-	touch_y_average =  y_avg >> 3;   // Š„‚é 8
+	touch_x_average =  x_avg >> 3;   // å‰²ã‚‹ 8
+	touch_y_average =  y_avg >> 3;   // å‰²ã‚‹ 8
 	
 
 	if ( tc_val_pt < 7 ) {		// 
 	
-	   tc_val_pt = tc_val_pt + 1;	// Ši”[ˆÊ’u‚ÌƒCƒ“ƒNƒŠƒƒ“ƒg
+	   tc_val_pt = tc_val_pt + 1;	// æ ¼ç´ä½ç½®ã®ã‚¤ãƒ³ã‚¯ãƒªãƒ¡ãƒ³ãƒˆ
 	}
 	else  {				
 	  
-	   tc_val_pt = 0;		// Ši”[ˆÊ’u‚ÌƒNƒŠƒA	
+	   tc_val_pt = 0;		// æ ¼ç´ä½ç½®ã®ã‚¯ãƒªã‚¢	
 	}
 	 
 }
@@ -96,28 +96,29 @@ void xpt2046_cal_average(void)
 
 
 //
-//   X,Y,Z1,Z2‚ğ“¾‚é‚Ü‚½A’ïR’l‚ğŒvZ‚·‚éB
+//   X,Y,Z1,Z2ã‚’å¾—ã‚‹ã¾ãŸã€æŠµæŠ—å€¤ã‚’è¨ˆç®—ã™ã‚‹ã€‚
 //
-// ƒ^ƒbƒ`ƒpƒlƒ‹‚ÌZ•ûŒü(ƒtƒBƒ‹ƒ€‚Æ‚»‚Ì‰º‚É‚ ‚éLCDƒKƒ‰ƒX‚Æ‚Ìã‰º•ûŒü)‚Ì’ïR’l(Rz)‚ğ“¾‚é
-//  ƒ^ƒbƒ`‚³‚ê‚Ä‚¢‚È‚¢ó‘Ô‚Å‚ÍA‘å‚«‚¢’l‚É‚È‚éB
+// ã‚¿ãƒƒãƒãƒ‘ãƒãƒ«ã®Zæ–¹å‘(ãƒ•ã‚£ãƒ«ãƒ ã¨ãã®ä¸‹ã«ã‚ã‚‹LCDã‚¬ãƒ©ã‚¹ã¨ã®ä¸Šä¸‹æ–¹å‘)ã®æŠµæŠ—å€¤(Rz)ã‚’å¾—ã‚‹
+//  ã‚¿ãƒƒãƒã•ã‚Œã¦ã„ãªã„çŠ¶æ…‹ã§ã¯ã€å¤§ãã„å€¤ã«ãªã‚‹ã€‚
 //
-//     Rz = Rx_plate * ( X²‘ª’è’l /4096 )* ( ( Z2 / Z1 ) - 1 )
+//     Rz = Rx_plate * ( Xè»¸æ¸¬å®šå€¤ /4096 )* ( ( Z2 / Z1 ) - 1 )
 //
-//    Rx_plate: ƒ^ƒbƒ`ƒXƒNƒŠ[ƒ“‚ÌXƒvƒŒ[ƒg(ƒtƒBƒ‹ƒ€‘¤)‚Ì’ïR’l 270[ƒ¶] (À‘ª)
+//    Rx_plate: ã‚¿ãƒƒãƒã‚¹ã‚¯ãƒªãƒ¼ãƒ³ã®Xãƒ—ãƒ¬ãƒ¼ãƒˆ(ãƒ•ã‚£ãƒ«ãƒ å´)ã®æŠµæŠ—å€¤ 270[Î©] (å®Ÿæ¸¬)
 
 void xpt2046_xyz_press(void)
 {
-	touch_x_val = xpt_rcv_data[1];	// X²‘ª’èƒf[ƒ^‚Ì b11-b4
-	touch_y_val = xpt_rcv_data[4];  // Y²‘ª’èƒf[ƒ^‚Ì b11-b4
+	touch_x_val = xpt_rcv_data[1];	// Xè»¸æ¸¬å®šãƒ‡ãƒ¼ã‚¿ã® b11-b4
+	touch_y_val = xpt_rcv_data[4];  // Yè»¸æ¸¬å®šãƒ‡ãƒ¼ã‚¿ã® b11-b4
 	
-	touch_z1_val =  xpt_rcv_data[7];  // Z1 ‘ª’èƒf[ƒ^‚Ì b11-b4
+	touch_z1_val =  xpt_rcv_data[7];  // Z1 æ¸¬å®šãƒ‡ãƒ¼ã‚¿ã® b11-b4
 	
-	touch_z2_val = xpt_rcv_data[10];  // Z2 ‘ª’èƒf[ƒ^‚Ì b11-b4
+	touch_z2_val = xpt_rcv_data[10];  // Z2 æ¸¬å®šãƒ‡ãƒ¼ã‚¿ã® b11-b4
 	  
 	if ( touch_z1_val > 0 ) {
-	   touch_z1_z2 = ( touch_z2_val / touch_z1_val ); //  Z2/Z1 
-	
-	   touch_resistance = 270.0 * ( touch_x_val / 4096.0 ) * ( touch_z1_z2 - 1.0 );
+	  //   touch_z1_z2 = ( touch_z2_val / touch_z1_val ); //  Z2/Z1 integer/integer 
+	  touch_z1_z2 = (float)touch_z2_val / (float)touch_z1_val;  // modified. 2022-Dec-27
+	   
+	  touch_resistance = 270.0 * ( touch_x_val / 4096.0 ) * ( touch_z1_z2 - 1.0 );
         }
 	else{
 	   touch_resistance = 999.9;
@@ -126,19 +127,19 @@ void xpt2046_xyz_press(void)
 
 
 
-// @
-// ƒ^ƒbƒ`ƒL[‚Ìó‘Ô‚ğ“¾‚é
-//  ’ïR’l‚ª 20ƒ¶‚ğ’´‚¦‚éê‡‚ÍA”ñƒ^ƒbƒ`‚Æ‚·‚éB
-//  20ƒ¶ˆÈ‰º‚Ìê‡Aƒ^ƒbƒ`‚³‚ê‚Ä‚¢‚é‚Æ”»’f‚·‚éB
+// ã€€
+// ã‚¿ãƒƒãƒã‚­ãƒ¼ã®çŠ¶æ…‹ã‚’å¾—ã‚‹
+//  æŠµæŠ—å€¤ãŒ 20Î©ã‚’è¶…ãˆã‚‹å ´åˆã¯ã€éã‚¿ãƒƒãƒã¨ã™ã‚‹ã€‚
+//  20Î©ä»¥ä¸‹ã®å ´åˆã€ã‚¿ãƒƒãƒã•ã‚Œã¦ã„ã‚‹ã¨åˆ¤æ–­ã™ã‚‹ã€‚
 // 
-// X²‚ÆY²‚Ì“Ç‚İo‚µƒf[ƒ^‚É‚æ‚èA‰Ÿ‚³‚ê‚½ƒL[‚ğ”»’fB
+// Xè»¸ã¨Yè»¸ã®èª­ã¿å‡ºã—ãƒ‡ãƒ¼ã‚¿ã«ã‚ˆã‚Šã€æŠ¼ã•ã‚ŒãŸã‚­ãƒ¼ã‚’åˆ¤æ–­ã€‚
 //
-//  c‚É”z’u:  
+//  ç¸¦ã«é…ç½®:  â„ƒ
 //              F
 //
-// @@@@@@    ƒ^ƒbƒ`–³‚µ   (SW0)         F (SW1)        @    
-//  touch_x_val:@@ 0x00      0x32`0x48     0x32`0x48   
-//  touch_y_val:     0x7f      0x1b`0x29     0x06`0x15     
+// ã€€ã€€ã€€ã€€ã€€ã€€    ã‚¿ãƒƒãƒç„¡ã—   â„ƒ(SW0)         F (SW1)        ã€€    
+//  touch_x_val:ã€€ã€€ 0x00      0x32ï½0x48     0x32ï½0x48   
+//  touch_y_val:     0x7f      0x1bï½0x29     0x06ï½0x15     
 //
 ///
 //
@@ -149,20 +150,20 @@ void touch_key_status_check(void)
 	uint32_t i;
 	
 
-	if ( touch_resistance > 20.0 ) {		// ’ïR’l‚ª20ƒ¶‚ğ’´‚¦‚éê‡A
-	  for ( i = 0 ; i < KEY_SW_NUM; i++ ) {		//  ‘S‚Ä”ñƒ^ƒbƒ`(SW OFF: High = 1 )‚Æ‚·‚é
+	if ( touch_resistance > 20.0 ) {		// æŠµæŠ—å€¤ãŒ20Î©ã‚’è¶…ãˆã‚‹å ´åˆã€
+	  for ( i = 0 ; i < KEY_SW_NUM; i++ ) {		//  å…¨ã¦éã‚¿ãƒƒãƒ(SW OFF: High = 1 )ã¨ã™ã‚‹
 	     Key_sw[i].status = 1;
 	  }
 	  
 	  return;  
 	}
-							// ‰Ÿ‚³‚ê‚½ƒL[‚Ì”»’è
+							// æŠ¼ã•ã‚ŒãŸã‚­ãƒ¼ã®åˆ¤å®š
 	if (( touch_x_val >= 0x32 ) && (  touch_x_val <= 0x48 )){        //  
 	
-	   if (( touch_y_val >= 0x1b ) && (  touch_y_val <= 0x29 )){   //   ƒL[(SW0) ƒ^ƒbƒ`
-	  	Key_sw[0].status = 0;				       // ‰Ÿ‚³‚ê‚½ƒL[‚ğƒ^ƒbƒ`‚ ‚è(SW ON: Low = 0 )‚Æ‚·‚é
+	   if (( touch_y_val >= 0x1b ) && (  touch_y_val <= 0x29 )){   //   â„ƒã‚­ãƒ¼(SW0) ã‚¿ãƒƒãƒ
+	  	Key_sw[0].status = 0;				       // æŠ¼ã•ã‚ŒãŸã‚­ãƒ¼ã‚’ã‚¿ãƒƒãƒã‚ã‚Š(SW ON: Low = 0 )ã¨ã™ã‚‹
 	    }
-	    else if (( touch_y_val >= 0x06 ) && (  touch_y_val <= 0x15 )){     //   FƒL[(SW1) ƒ^ƒbƒ`
+	    else if (( touch_y_val >= 0x06 ) && (  touch_y_val <= 0x15 )){     //   Fã‚­ãƒ¼(SW1) ã‚¿ãƒƒãƒ
 	  	Key_sw[1].status = 0;						
 	    }
 	}
@@ -170,61 +171,61 @@ void touch_key_status_check(void)
 }
 
 //
-// @ƒXƒCƒbƒ`‚Ì“ü—Í”»’è (20msec‚É1‰ñ@Às)
+// ã€€ã‚¹ã‚¤ãƒƒãƒã®å…¥åŠ›åˆ¤å®š (20msecã«1å›ã€€å®Ÿè¡Œ)
 //
-// ŠT—v:
-//   ƒ^ƒbƒ`ó‘Ô‚ª4‰ñŒp‘±ŒãA”ñƒ^ƒbƒ`‚É‚ê‚Îƒ^ƒbƒ`‚³‚ê‚½‚Æ‚·‚éB
+// æ¦‚è¦:
+//   ã‚¿ãƒƒãƒçŠ¶æ…‹ãŒ4å›ç¶™ç¶šå¾Œã€éã‚¿ãƒƒãƒã«ã‚Œã°ã‚¿ãƒƒãƒã•ã‚ŒãŸã¨ã™ã‚‹ã€‚
 //
-//    ”»’è‚·‚éƒXƒCƒbƒ`:
-//                  0 = ‚ÌƒL[ (SW0)  
-//                  1 =  F‚ÌƒL[ (SW1) 
+//    åˆ¤å®šã™ã‚‹ã‚¹ã‚¤ãƒƒãƒ:
+//                  0 = â„ƒã®ã‚­ãƒ¼ (SW0)  
+//                  1 =  Fã®ã‚­ãƒ¼ (SW1) 
 //                
 //             
 //  
 void switch_input_check( uint8_t id ) 
 {
 	
-         if ( Key_sw[id].status == 0 ) {     // ¡‰ñ ƒ^ƒbƒ`ó‘Ô
+         if ( Key_sw[id].status == 0 ) {     // ä»Šå› ã‚¿ãƒƒãƒçŠ¶æ…‹
 	
-	     if ( Key_sw[id].pre_status == 1 ) {  // ‘O‰ñ ”ñƒ^ƒbƒ`ó‘Ô@@(—§‰º‚ª‚èŒŸo)
-	           Key_sw[id].low_cnt =  1;       // LowƒJƒEƒ“ƒg = 1 ƒZƒbƒg
+	     if ( Key_sw[id].pre_status == 1 ) {  // å‰å› éã‚¿ãƒƒãƒçŠ¶æ…‹ã€€ã€€(ç«‹ä¸‹ãŒã‚Šæ¤œå‡º)
+	           Key_sw[id].low_cnt =  1;       // Lowã‚«ã‚¦ãƒ³ãƒˆ = 1 ã‚»ãƒƒãƒˆ
 	     
 	     }
-	     else {				 // ‘O‰ñ ƒ^ƒbƒ`ó‘Ô@
-	          Key_sw[id].low_cnt = Key_sw[id].low_cnt + 1; // LowƒJƒEƒ“ƒg‚ÌƒCƒ“ƒNƒŠƒƒ“ƒg  
+	     else {				 // å‰å› ã‚¿ãƒƒãƒçŠ¶æ…‹ã€€
+	          Key_sw[id].low_cnt = Key_sw[id].low_cnt + 1; // Lowã‚«ã‚¦ãƒ³ãƒˆã®ã‚¤ãƒ³ã‚¯ãƒªãƒ¡ãƒ³ãƒˆ  
 	     }
 	     
 	  } 
 
-	  else{				// ¡‰ñ@”ñƒ^ƒbƒ`ó‘Ô
+	  else{				// ä»Šå›ã€€éã‚¿ãƒƒãƒçŠ¶æ…‹
 	   
-	      if ( Key_sw[id].pre_status == 0 ) {  // ‘O‰ñ ƒ^ƒbƒ`ó‘Ô (—§ã‚ª‚èŒŸo)
+	      if ( Key_sw[id].pre_status == 0 ) {  // å‰å› ã‚¿ãƒƒãƒçŠ¶æ…‹ (ç«‹ä¸ŠãŒã‚Šæ¤œå‡º)
 	     
-	          if ( Key_sw[id].low_cnt > 3 ) {   // 4‰ñˆÈã@ƒ^ƒbƒ`ŒŸo‚Ìê‡
+	          if ( Key_sw[id].low_cnt > 3 ) {   // 4å›ä»¥ä¸Šã€€ã‚¿ãƒƒãƒæ¤œå‡ºã®å ´åˆ
 	             
-		      Key_sw[id].one_push = 1;	 // ƒL[“ü—Íˆ——v‹(1‰ñ‰Ÿ‚µ)ƒZƒbƒg
+		      Key_sw[id].one_push = 1;	 // ã‚­ãƒ¼å…¥åŠ›å‡¦ç†è¦æ±‚(1å›æŠ¼ã—)ã‚»ãƒƒãƒˆ
 		      
-		      Key_sw[id].low_cnt = 0;	//  LowƒJƒEƒ“ƒg‚ÌƒNƒŠƒA  
+		      Key_sw[id].low_cnt = 0;	//  Lowã‚«ã‚¦ãƒ³ãƒˆã®ã‚¯ãƒªã‚¢  
 	          }
 	      }
 	  }	  
 	  	
-	  Key_sw[id].pre_status = Key_sw[id].status;   // Œ»İ‚Ìó‘Ô‚ğAˆê‚Â‘O‚Ìó‘Ô‚ÖƒRƒs[
+	  Key_sw[id].pre_status = Key_sw[id].status;   // ç¾åœ¨ã®çŠ¶æ…‹ã‚’ã€ä¸€ã¤å‰ã®çŠ¶æ…‹ã¸ã‚³ãƒ”ãƒ¼
 	  
 }
    
 
 
 //
-// ƒL[“ü—Íˆ—
-//   0 = SW0 , ‰·“x‚Ì’PˆÊ‚ÍA(Û)‚Å•\¦
-//   1 = SW1 , ‰·“x‚Ì’PˆÊ‚ÍAF(‰Ø)‚Å•\¦
+// ã‚­ãƒ¼å…¥åŠ›å‡¦ç†
+//   0 = SW0 , æ¸©åº¦ã®å˜ä½ã¯ã€â„ƒ(æ‘‚æ°)ã§è¡¨ç¤º
+//   1 = SW1 , æ¸©åº¦ã®å˜ä½ã¯ã€F(è¯æ°)ã§è¡¨ç¤º
 //
 void key_input(void)	
 {
 	uint32_t    i;
 	
-	if (  Key_sw[0].one_push == 1 ) {	    //  key
+	if (  Key_sw[0].one_push == 1 ) {	    // â„ƒ key
 		
 		flg_disp_fahrenheit = 0;
 	       
@@ -237,7 +238,7 @@ void key_input(void)
 	}
 	
 	
-	for ( i = 0 ; i < KEY_SW_NUM ; i++ ) {	// ƒXƒCƒbƒ` ˆê“x‰Ÿ‚µ‚Ìî•ñ‚ğƒNƒŠƒA
+	for ( i = 0 ; i < KEY_SW_NUM ; i++ ) {	// ã‚¹ã‚¤ãƒƒãƒ ä¸€åº¦æŠ¼ã—ã®æƒ…å ±ã‚’ã‚¯ãƒªã‚¢
 		Key_sw[i].one_push = 0;
 	}
 	
